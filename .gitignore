@@ -34,3 +34,7 @@ flycheck_*.py
 
 # environment management
 .python-version
+
+# Secret files.
+client_secrets.json
+settings.yaml
