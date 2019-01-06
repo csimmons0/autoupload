@@ -38,3 +38,4 @@ flycheck_*.py
 # Secret files.
 client_secrets.json
 settings.yaml
+credentials.json

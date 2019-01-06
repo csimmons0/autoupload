@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>autoupload.plist</string>
+
+        <key>RunAtLoad</key>
+        <true/>
+
+        <key>WatchPaths</key>
+        <array>
+            <string>/Users/csimmons/Documents/autoupload/toupload</string>
+        </array>
+
+        <key>StandardErrorPath</key>
+        <string>/tmp/autoupload.log</string>
+
+        <key>StandardOutPath</key>
+        <string>/tmp/autoupload.log</string>
+
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>PATH</key>
+            <string>/Users/csimmons/.pyenv/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/csimmons/bin</string>
+
+            <key>LC_ALL</key>
+            <string>en_US.utf-8</string>
+
+            <key>LANG</key>
+            <string>en_US.utf-8</string>
+        </dict>
+
+        <key>WorkingDirectory</key>
+        <string>/Users/csimmons/repos/autoupload</string>
+
+        <key>ProgramArguments</key>
+        <array>
+            <string>/Users/csimmons/.pyenv/shims/pipenv</string>
+            <string>run</string>
+            <string>./autoupload.py</string>
+            <string>/Users/csimmons/Documents/autoupload/toupload</string>
+        </array>
+    </dict>
+</plist>
