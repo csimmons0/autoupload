@@ -2,7 +2,9 @@
 
 import argparse
 import logging
+import os
 import pathlib
+import shutil
 import sys
 from typing import Set
 
@@ -18,6 +20,7 @@ logger = logging.getLogger(__package__)
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("local_videos_path")
+    parser.add_argument("local_uploaded_videos_path")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
     loglevel = logging.INFO
@@ -25,6 +28,10 @@ def main():
         loglevel = logging.DEBUG
 
     logging.basicConfig(level=loglevel)
+
+    # Create the uploaded videos folder.
+    local_uploaded_videos_path = pathlib.Path(args.local_uploaded_videos_path)
+    os.makedirs(str(local_uploaded_videos_path), exist_ok=True)
 
     # Authenticate with Google and get a GoogleDrive object.
     gauth = GoogleAuth()
@@ -65,6 +72,7 @@ def main():
         )
         drive_video.SetContentFile(str(video_path))
         drive_video.Upload()
+        shutil.move(video_path, local_uploaded_videos_path.joinpath(video_path.name))
 
     return 0
 

@@ -40,6 +40,7 @@
             <string>run</string>
             <string>./autoupload.py</string>
             <string>/Users/csimmons/Documents/autoupload/toupload</string>
+            <string>/Users/csimmons/Documents/autoupload/uploaded</string>
         </array>
     </dict>
 </plist>
