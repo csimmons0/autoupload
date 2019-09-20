@@ -182,6 +182,9 @@ def main():
             drive_file.SetContentFile(str(filepath))
             drive_file.Upload()
 
+            # Close the file. See https://github.com/gsuitedevs/PyDrive/issues/129
+            drive_file.SetContentFile("nul")
+
             # Move the file to the uploaded files folder.
             shutil.move(
                 filepath,
