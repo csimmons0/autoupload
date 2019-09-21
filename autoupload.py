@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import functools
 import logging
 import os
 import pathlib
@@ -17,7 +18,7 @@ DRIVE_FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 
 logger = logging.getLogger(__package__)
 
-
+@functools.lru_cache()
 def get_drive_dir_id(
         drive: GoogleDrive,
         parent_id: Optional[str],
@@ -142,6 +143,12 @@ def main():
         # Filter out subdirectories that this routine should skip.
         subdirs[:] = [subdir for subdir in subdirs if not should_skip_directory(subdir)]
 
+        # If this directory contains no files, move to the next directory in the walk.
+        # Note that doing so does not cause subdirectories to be skipped.
+        if not filenames:
+            logger.debug("%s contains no files", directory)
+            continue
+            
         # Create the directory in Drive.
         directory_relative_path = pathlib.Path(directory).relative_to(local_videos_dir)
         drive_dir_id = make_drive_videos_subdir(drive, directory_relative_path)
@@ -195,4 +202,12 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    exit_code = 1
+    try:
+        exit_code = main()
+    except Exception as exception:
+        logger.error(exception)
+    finally:
+        logger.info("Cache info: %s", get_drive_dir_id.cache_info())
+
+    sys.exit(exit_code)
