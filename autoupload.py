@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import concurrent.futures
 import functools
 import logging
 import os
 import pathlib
 import shutil
 import sys
+import threading
 from typing import Optional, Set
 
 from pydrive.apiattr import ApiResourceList
@@ -15,6 +17,7 @@ from pydrive.drive import GoogleDrive, GoogleDriveFile
 
 DRIVE_VIDEOS_DIR_NAME = "Videos"
 DRIVE_FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
+WORKER_COUNT = 2
 
 logger = logging.getLogger(__package__)
 
@@ -115,6 +118,27 @@ def is_dotfile(path: pathlib.Path) -> bool:
     return path.name[0] == "."
 
 
+def upload_file(drive: GoogleDrive, drive_dir_id: str, uploaded_files_dir: pathlib.Path, filepath: pathlib.Path):
+    # Upload the file.
+    logger.info("Uploading %s", filepath.name)
+    drive_file = drive.CreateFile(
+        dict(
+            title=filepath.name, parents=[parent_descriptor(drive_dir_id)]
+        )
+    )
+
+    drive_file.SetContentFile(str(filepath))
+    drive_file.Upload()
+
+    # Close the file. See https://github.com/gsuitedevs/PyDrive/issues/129
+    drive_file.SetContentFile("nul")
+
+    # Move the file to the uploaded files folder.
+    shutil.move(
+        filepath,
+        uploaded_files_dir.joinpath(filepath.name)
+    )
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("local_videos_path")
@@ -126,6 +150,8 @@ def main():
         loglevel = logging.DEBUG
 
     logging.basicConfig(level=loglevel)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=WORKER_COUNT)
+    semaphore = threading.BoundedSemaphore(value=WORKER_COUNT)
 
     # Create the uploaded videos folder.
     local_uploaded_videos_path = pathlib.Path(args.local_uploaded_videos_path)
@@ -178,26 +204,18 @@ def main():
             if should_skip_file(filepath):
                 continue
 
-            # Upload the file.
-            logger.info("Uploading %s", filepath.name)
-            drive_file = drive.CreateFile(
-                dict(
-                    title=filepath.name, parents=[parent_descriptor(drive_dir_id)]
-                )
-            )
+            def upload_this_file():
+                try:
+                    upload_file(drive, drive_dir_id, uploaded_files_dir, filepath)
+                finally:
+                    semaphore.release()
 
-            drive_file.SetContentFile(str(filepath))
-            drive_file.Upload()
+            if not semaphore.acquire(timeout=60 * 60 * 6):
+                raise RuntimeError("Timed out")
 
-            # Close the file. See https://github.com/gsuitedevs/PyDrive/issues/129
-            drive_file.SetContentFile("nul")
+            executor.submit(upload_this_file)
 
-            # Move the file to the uploaded files folder.
-            shutil.move(
-                filepath,
-                uploaded_files_dir.joinpath(filepath.name)
-            )
-
+    executor.shutdown()
     return 0
 
 
